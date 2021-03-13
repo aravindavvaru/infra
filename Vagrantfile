@@ -1,0 +1,52 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+
+Vagrant.configure("2") do |config|
+  config.vm.define "kubemaster" do |kubemaster|
+    config.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = "4"
+    end
+    config.vm.box = "ubuntu/xenial64"
+    config.vm.hostname = "kubemaster"
+    config.vm.network "public_network"
+    config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+    config.vm.synced_folder "/Users/aravindavvar/chef-repo/chef-repo/.chef", "/vagrant"
+    config.omnibus.chef_version = :latest
+    config.vm.provision "shell", inline: <<-SHELL
+      mkdir /etc/chef
+      cp /vagrant/aravind1234.pem /etc/chef/client.pem
+    SHELL
+    config.vm.provision :chef_client do |chef|
+      chef.provisioning_path = "/etc/chef"
+      chef.arguments = "--chef-license accept"
+      chef.chef_server_url = "https://api.chef.io/organizations/test1234561"
+      chef.validation_key_path = "/Users/aravindavvar/chef-repo/chef-repo/.chef/aravind1234.pem"
+    end
+  end
+  config.vm.define "kubenode" do |kubenode|
+    config.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = "2"
+    end
+    config.vm.box = "ubuntu/xenial64"
+    config.vm.network "public_network"
+    config.vm.synced_folder "/Users/aravindavvar/chef-repo/chef-repo/.chef", "/vagrant"
+    config.omnibus.chef_version = :latest
+    config.vm.provision "shell", inline: <<-SHELL
+      mkdir /etc/chef
+      cp /vagrant/aravind1234.pem /etc/chef/client.pem
+    SHELL
+    config.vm.provision :chef_client do |chefnode|
+      chefnode.node_name = "aravind1234"
+      chefnode.arguments = "--chef-license accept"
+      chefnode.chef_server_url = "https://api.chef.io/organizations/test1234561"
+      chefnode.validation_key_path = "/Users/aravindavvar/chef-repo/chef-repo/.chef/aravind1234.pem"
+    end
+  end  
+end
